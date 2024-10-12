@@ -4,6 +4,7 @@ import { colors, useAppFonts } from '../shared/fonts';
 
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { login } from '../services/api';
 
 const Login = ({ navigation }) => {
 
@@ -19,7 +20,7 @@ const Login = ({ navigation }) => {
     return null; // or a loading indicator
   }
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     // Reset previous error messages
     setEmailError('');
     setPasswordError('');
@@ -51,8 +52,16 @@ const Login = ({ navigation }) => {
       return;
     }
 
-    // Proceed with login logic
-
+    try {
+      const userData = await login(email, password);
+      // For now, just log the user data and navigate to Home
+      console.log('User logged in:', userData);
+      navigation.navigate('Home');
+    } catch (error) {
+      console.error('Login error:', error);
+      // Display a generic error message
+      Alert.alert('Login Failed', 'Please check your credentials and try again.');
+    }
   };
 
   const dismissKeyboard = () => {

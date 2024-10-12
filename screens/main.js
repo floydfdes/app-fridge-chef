@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 
 import { Camera } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
+import { getRecipesByIngredients } from '../services/api';
 
 const Main = () => {
   const [fridgeImage, setFridgeImage] = useState(null);
@@ -22,9 +23,15 @@ const Main = () => {
 
       if (!result.canceled) {
         setFridgeImage(result.assets[0].uri);
-        // TODO: Send image to backend for processing
-        // For now, we'll just set some dummy recipes
-        setSuggestedRecipes(dummyRecipes);
+        try {
+          // For now, we'll use dummy ingredients
+          const dummyIngredients = ['tomato', 'cheese', 'pasta'];
+          const recipes = await getRecipesByIngredients(dummyIngredients);
+          setSuggestedRecipes(recipes);
+        } catch (error) {
+          console.error('Error getting recipes:', error);
+          Alert.alert('Error', 'Failed to get recipe suggestions. Please try again.');
+        }
       }
     }
   };

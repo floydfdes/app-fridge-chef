@@ -1,8 +1,8 @@
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import React, { useState } from 'react';
+import { Alert, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import { baseFontSize, colors, useAppFonts } from '../shared/fonts';
 
-import recipesData from '../shared/recipes.json';
+import { getRecipes } from '../services/api';
 
 const categories = [
     { id: '1', name: 'Breakfast', key: 'breakfast' },
@@ -15,10 +15,28 @@ const categories = [
 
 const Explore = () => {
     const [selectedCategory, setSelectedCategory] = useState(null);
+    const [recipes, setRecipes] = useState([]);
+    const [loading, setLoading] = useState(true);
     const loaded = useAppFonts();
 
-    if (!loaded) {
-        return null;
+    useEffect(() => {
+        const fetchRecipes = async () => {
+            try {
+                const fetchedRecipes = await getRecipes();
+                setRecipes(fetchedRecipes);
+            } catch (error) {
+                console.error('Error fetching recipes:', error);
+                Alert.alert('Error', 'Failed to load recipes. Please try again.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRecipes();
+    }, []);
+
+    if (!loaded || loading) {
+        return <Text>Loading...</Text>;
     }
 
     const renderCategory = ({ item }) => (
@@ -43,6 +61,10 @@ const Explore = () => {
         </View>
     );
 
+    const filteredRecipes = selectedCategory
+        ? recipes.filter(recipe => recipe.category === selectedCategory)
+        : recipes;
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Explore Recipes</Text>
@@ -61,11 +83,15 @@ const Explore = () => {
                     >
                         <Text style={styles.backButtonText}>Back to Categories</Text>
                     </TouchableOpacity>
-                    <FlatList
-                        data={recipesData[selectedCategory]}
-                        renderItem={renderRecipe}
-                        keyExtractor={item => item.id.toString()}
-                    />
+                    {filteredRecipes.length > 0 ? (
+                        <FlatList
+                            data={filteredRecipes}
+                            renderItem={renderRecipe}
+                            keyExtractor={item => item.id.toString()}
+                        />
+                    ) : (
+                        <Text style={styles.noRecipesText}>No recipes found for this category.</Text>
+                    )}
                 </>
             )}
         </View>
@@ -148,6 +174,11 @@ const styles = StyleSheet.create({
         fontFamily: 'Poppins',
         fontSize: baseFontSize * 0.8,
         color: colors.text,
+    },
+    noRecipesText: {
+        fontSize: baseFontSize,
+        textAlign: 'center',
+        marginTop: 20,
     },
 });
 

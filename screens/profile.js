@@ -1,40 +1,62 @@
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import { baseFontSize, colors } from '../shared/fonts';
 
 import { FontAwesome } from '@expo/vector-icons';
-import React from 'react';
-import recipesData from '../shared/recipes.json';
+import { getUserProfile } from '../services/api';
 
 const Profile = () => {
+    const [userProfile, setUserProfile] = useState(null);
+
+    useEffect(() => {
+        const fetchUserProfile = async () => {
+            try {
+                // For now, we'll use a dummy user ID
+                const dummyUserId = '123';
+                const profile = await getUserProfile(dummyUserId);
+                setUserProfile(profile);
+            } catch (error) {
+                console.error('Error fetching user profile:', error);
+                Alert.alert('Error', 'Failed to load user profile. Please try again.');
+            }
+        };
+
+        fetchUserProfile();
+    }, []);
+
+    if (!userProfile) {
+        return <Text>Loading...</Text>;
+    }
+
     return (
         <ScrollView style={styles.container}>
             <View style={styles.header}>
                 <Image
-                    source={{ uri: 'https://example.com/profile-picture.jpg' }}
+                    source={{ uri: userProfile.profilePicture }}
                     style={styles.profilePicture}
                 />
                 <View style={styles.headerInfo}>
-                    <Text style={styles.name}>John Doe</Text>
-                    <Text style={styles.username}>@johndoe</Text>
+                    <Text style={styles.name}>{userProfile.name}</Text>
+                    <Text style={styles.username}>@{userProfile.username}</Text>
                 </View>
             </View>
 
             <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
-                    <Text style={styles.statNumber}>{recipesData.myRecipes.length}</Text>
+                    <Text style={styles.statNumber}>{userProfile.recipesCount}</Text>
                     <Text style={styles.statLabel}>Recipes</Text>
                 </View>
                 <View style={styles.statItem}>
-                    <Text style={styles.statNumber}>1.2k</Text>
+                    <Text style={styles.statNumber}>{userProfile.followersCount}</Text>
                     <Text style={styles.statLabel}>Followers</Text>
                 </View>
                 <View style={styles.statItem}>
-                    <Text style={styles.statNumber}>350</Text>
+                    <Text style={styles.statNumber}>{userProfile.followingCount}</Text>
                     <Text style={styles.statLabel}>Following</Text>
                 </View>
             </View>
 
-            <Text style={styles.bio}>Food enthusiast | Amateur chef | Recipe creator</Text>
+            <Text style={styles.bio}>{userProfile.bio}</Text>
 
             <TouchableOpacity style={styles.editButton}>
                 <Text style={styles.editButtonText}>Edit Profile</Text>
@@ -43,7 +65,7 @@ const Profile = () => {
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>My Recipes</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    {recipesData.myRecipes.map((recipe) => (
+                    {userProfile.recipes.map((recipe) => (
                         <View key={recipe.id} style={styles.recipeThumbnail}>
                             <Image source={{ uri: recipe.imageUrl }} style={styles.recipeImage} />
                             <Text style={styles.recipeName}>{recipe.name}</Text>
@@ -54,14 +76,12 @@ const Profile = () => {
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Recent Activity</Text>
-                <View style={styles.activityItem}>
-                    <FontAwesome name="star" size={16} color={colors.primary} />
-                    <Text style={styles.activityText}>Liked Spaghetti Carbonara recipe</Text>
-                </View>
-                <View style={styles.activityItem}>
-                    <FontAwesome name="pencil" size={16} color={colors.primary} />
-                    <Text style={styles.activityText}>Created Homemade Pizza recipe</Text>
-                </View>
+                {userProfile.recentActivity.map((activity, index) => (
+                    <View key={index} style={styles.activityItem}>
+                        <FontAwesome name={activity.icon} size={16} color={colors.primary} />
+                        <Text style={styles.activityText}>{activity.text}</Text>
+                    </View>
+                ))}
             </View>
         </ScrollView>
     );

@@ -1,9 +1,9 @@
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import { baseFontSize, colors, useAppFonts } from '../shared/fonts';
 
 import { FontAwesome } from '@expo/vector-icons';
-import React from 'react';
-import recipesData from '../shared/recipes.json';
+import { getRecipes } from '../services/api';
 
 const RecipeCard = ({ recipe }) => (
     <View style={styles.recipeCard}>
@@ -20,7 +20,25 @@ const RecipeCard = ({ recipe }) => (
 );
 
 const MyRecipes = () => {
+    const [myRecipes, setMyRecipes] = useState([]);
+    const [popularRecipes, setPopularRecipes] = useState([]);
     const loaded = useAppFonts();
+
+    useEffect(() => {
+        const fetchRecipes = async () => {
+            try {
+                const recipes = await getRecipes();
+                // For now, we'll split the recipes into my recipes and popular recipes
+                setMyRecipes(recipes.slice(0, 5));
+                setPopularRecipes(recipes.slice(5, 10));
+            } catch (error) {
+                console.error('Error fetching recipes:', error);
+                Alert.alert('Error', 'Failed to load recipes. Please try again.');
+            }
+        };
+
+        fetchRecipes();
+    }, []);
 
     if (!loaded) {
         return null;
@@ -34,14 +52,14 @@ const MyRecipes = () => {
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>My Creations</Text>
-                {recipesData.myRecipes.map((recipe) => (
+                {myRecipes.map((recipe) => (
                     <RecipeCard key={recipe.id} recipe={recipe} />
                 ))}
             </View>
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Popular Recipes</Text>
-                {recipesData.popularRecipes.map((recipe) => (
+                {popularRecipes.map((recipe) => (
                     <RecipeCard key={recipe.id} recipe={recipe} />
                 ))}
             </View>

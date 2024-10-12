@@ -4,6 +4,7 @@ import { colors, useAppFonts } from '../shared/fonts';
 
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { signup } from '../services/api';
 
 const Signup = ({ navigation }) => {
   const [fullName, setFullName] = useState('');
@@ -19,7 +20,7 @@ const Signup = ({ navigation }) => {
     return null; // or a loading indicator
   }
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     // Reset previous error messages
     setFullNameError('');
     setEmailError('');
@@ -58,8 +59,16 @@ const Signup = ({ navigation }) => {
       return;
     }
 
-    // Proceed with signup logic
-    // ...
+    try {
+      const userData = await signup(fullName, email, password);
+      // For now, just log the user data and navigate to Home
+      console.log('User signed up:', userData);
+      navigation.navigate('Home');
+    } catch (error) {
+      console.error('Signup error:', error);
+      // Display a generic error message
+      Alert.alert('Signup Failed', 'Please try again later.');
+    }
   };
 
   const dismissKeyboard = () => {
