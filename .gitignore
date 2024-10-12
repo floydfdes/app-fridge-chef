@@ -33,3 +33,8 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# Expo CLI generated patterns
+# @generated expo-cli sync-b5df6a44d8735348b729920a7406b633cfb74d4c
+# (No need to repeat the patterns here as they are already included above)
+# @end expo-cli
