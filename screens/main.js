@@ -2,10 +2,10 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import React, { useState } from 'react';
+import { getRecipesByIngredients, uploadFridgeImage } from '../services/api';
 
 import { Camera } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
-import { getRecipesByIngredients } from '../services/api';
 
 const Main = () => {
   const [fridgeImage, setFridgeImage] = useState(null);
@@ -24,13 +24,12 @@ const Main = () => {
       if (!result.canceled) {
         setFridgeImage(result.assets[0].uri);
         try {
-          // For now, we'll use dummy ingredients
-          const dummyIngredients = ['tomato', 'cheese', 'pasta'];
-          const recipes = await getRecipesByIngredients(dummyIngredients);
+          const uploadResult = await uploadFridgeImage(result.assets[0]);
+          const recipes = await getRecipesByIngredients(uploadResult.ingredients);
           setSuggestedRecipes(recipes);
         } catch (error) {
-          console.error('Error getting recipes:', error);
-          Alert.alert('Error', 'Failed to get recipe suggestions. Please try again.');
+          console.error('Error processing image:', error);
+          Alert.alert('Error', 'Failed to process image. Please try again.');
         }
       }
     }

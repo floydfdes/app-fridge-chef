@@ -22,8 +22,9 @@ const Explore = () => {
     useEffect(() => {
         const fetchRecipes = async () => {
             try {
-                const fetchedRecipes = await getRecipes();
-                setRecipes(fetchedRecipes);
+                const recipesData = await getRecipes();
+                console.log('Fetched recipes:', recipesData); // Log the fetched data
+                setRecipes(recipesData.recipes || []); // Ensure we're setting an array
             } catch (error) {
                 console.error('Error fetching recipes:', error);
                 Alert.alert('Error', 'Failed to load recipes. Please try again.');

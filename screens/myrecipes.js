@@ -1,72 +1,44 @@
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import { baseFontSize, colors, useAppFonts } from '../shared/fonts';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { baseFontSize, colors } from '../shared/fonts'; // Adjust the path as necessary
 
-import { FontAwesome } from '@expo/vector-icons';
+import RecipeCard from '../components/RecipeCard'; // Assuming RecipeCard is a separate component
 import { getRecipes } from '../services/api';
-
-const RecipeCard = ({ recipe }) => (
-    <View style={styles.recipeCard}>
-        <Image source={{ uri: recipe.imageUrl }} style={styles.recipeImage} />
-        <View style={styles.recipeInfo}>
-            <Text style={styles.recipeName}>{recipe.name}</Text>
-            <Text style={styles.recipeCuisine}>{recipe.cuisine}</Text>
-            <View style={styles.ratingContainer}>
-                <FontAwesome name="star" size={16} color={colors.secondary} />
-                <Text style={styles.ratingText}>{recipe.rating}</Text>
-            </View>
-        </View>
-    </View>
-);
 
 const MyRecipes = () => {
     const [myRecipes, setMyRecipes] = useState([]);
     const [popularRecipes, setPopularRecipes] = useState([]);
-    const loaded = useAppFonts();
 
     useEffect(() => {
-        const fetchRecipes = async () => {
-            try {
-                const recipes = await getRecipes();
-                // For now, we'll split the recipes into my recipes and popular recipes
-                setMyRecipes(recipes.slice(0, 5));
-                setPopularRecipes(recipes.slice(5, 10));
-            } catch (error) {
-                console.error('Error fetching recipes:', error);
-                Alert.alert('Error', 'Failed to load recipes. Please try again.');
-            }
-        };
-
         fetchRecipes();
     }, []);
 
-    if (!loaded) {
-        return null;
-    }
+    const fetchRecipes = async () => {
+        try {
+            const recipesData = await getRecipes();
+            setMyRecipes(recipesData.recipes.slice(0, 5));
+            setPopularRecipes(recipesData.recipes.slice(5, 10));
+        } catch (error) {
+            console.error('Error fetching recipes:', error);
+            // Handle error (e.g., show an alert)
+        }
+    };
 
     return (
         <ScrollView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.heading}>My Recipes</Text>
-            </View>
-
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>My Creations</Text>
+            <Text style={styles.sectionTitle}>My Recipes</Text>
+            <View style={styles.recipeList}>
                 {myRecipes.map((recipe) => (
-                    <RecipeCard key={recipe.id} recipe={recipe} />
+                    <RecipeCard key={recipe.id?.toString() || `my-${recipe.name}`} recipe={recipe} />
                 ))}
             </View>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Popular Recipes</Text>
+            <Text style={styles.sectionTitle}>Popular Recipes</Text>
+            <View style={styles.recipeList}>
                 {popularRecipes.map((recipe) => (
-                    <RecipeCard key={recipe.id} recipe={recipe} />
+                    <RecipeCard key={recipe.id?.toString() || `popular-${recipe.name}`} recipe={recipe} />
                 ))}
             </View>
-
-            <TouchableOpacity style={styles.addButton}>
-                <Text style={styles.addButtonText}>Add New Recipe</Text>
-            </TouchableOpacity>
         </ScrollView>
     );
 };

@@ -1,31 +1,89 @@
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { baseFontSize, colors } from '../shared/fonts';
+import { getUserProfile, updateUserProfile } from '../services/api';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FontAwesome } from '@expo/vector-icons';
-import { getUserProfile } from '../services/api';
 
 const Profile = () => {
     const [userProfile, setUserProfile] = useState(null);
+    const [userId, setUserId] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchUserProfile = async () => {
+        const fetchUserId = async () => {
             try {
-                // For now, we'll use a dummy user ID
-                const dummyUserId = '123';
-                const profile = await getUserProfile(dummyUserId);
-                setUserProfile(profile);
+                const storedUserId = await AsyncStorage.getItem('userId');
+                if (storedUserId) {
+                    setUserId(storedUserId);
+                }
             } catch (error) {
-                console.error('Error fetching user profile:', error);
-                Alert.alert('Error', 'Failed to load user profile. Please try again.');
+                console.error('Error fetching user ID:', error);
+                setError('Failed to load user information. Please try again.');
             }
         };
 
-        fetchUserProfile();
+        fetchUserId();
     }, []);
 
+    useEffect(() => {
+        if (userId) {
+            fetchUserProfile();
+        }
+    }, [userId]);
+
+    const fetchUserProfile = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            const profileData = await getUserProfile(userId);
+            setUserProfile(profileData);
+        } catch (error) {
+            console.error('Error fetching user profile:', error);
+            setError('Failed to load user profile. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleUpdateProfile = async (updatedData) => {
+        try {
+            const updatedProfile = await updateUserProfile(userId, updatedData);
+            setUserProfile(updatedProfile);
+            Alert.alert('Success', 'Profile updated successfully');
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            Alert.alert('Error', 'Failed to update profile. Please try again.');
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <View style={styles.centerContainer}>
+                <Text style={styles.loadingText}>Loading...</Text>
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.centerContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+                <TouchableOpacity style={styles.retryButton} onPress={fetchUserProfile}>
+                    <Text style={styles.retryButtonText}>Retry</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
     if (!userProfile) {
-        return <Text>Loading...</Text>;
+        return (
+            <View style={styles.centerContainer}>
+                <Text style={styles.errorText}>No profile data available.</Text>
+            </View>
+        );
     }
 
     return (
@@ -91,6 +149,36 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
+    },
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.background,
+    },
+    loadingText: {
+        fontFamily: 'Poppins',
+        fontSize: baseFontSize * 1.2,
+        color: colors.text,
+    },
+    errorText: {
+        fontFamily: 'Poppins',
+        fontSize: baseFontSize,
+        color: colors.error,
+        textAlign: 'center',
+        marginHorizontal: 20,
+    },
+    retryButton: {
+        backgroundColor: colors.primary,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 20,
+        marginTop: 20,
+    },
+    retryButtonText: {
+        fontFamily: 'Poppins',
+        color: colors.background,
+        fontSize: baseFontSize,
     },
     header: {
         flexDirection: 'row',

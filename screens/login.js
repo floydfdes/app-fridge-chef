@@ -1,7 +1,17 @@
-import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import {
+  Alert,
+  Keyboard,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import React, { useState } from 'react';
 import { colors, useAppFonts } from '../shared/fonts';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { login } from '../services/api';
@@ -21,6 +31,10 @@ const Login = ({ navigation }) => {
   }
 
   const handleLogin = async () => {
+    if (Platform.OS !== 'web') {
+      Keyboard.dismiss();
+    }
+
     // Reset previous error messages
     setEmailError('');
     setPasswordError('');
@@ -54,70 +68,63 @@ const Login = ({ navigation }) => {
 
     try {
       const userData = await login(email, password);
-      // For now, just log the user data and navigate to Home
+      await AsyncStorage.setItem('userId', userData.userId);
       console.log('User logged in:', userData);
       navigation.navigate('Home');
     } catch (error) {
-      console.error('Login error:', error);
-      // Display a generic error message
-      Alert.alert('Login Failed', 'Please check your credentials and try again.');
+      console.error('Login failed:', error);
+      Alert.alert('Login Failed', error.message || 'Please try again');
     }
   };
 
-  const dismissKeyboard = () => {
-    Keyboard.dismiss();
-  };
-
   return (
-    <TouchableWithoutFeedback onPress={dismissKeyboard}>
-      <LinearGradient colors={['#fff', '#8796a2']} style={styles.container}>
-        <View style={styles.contentContainer}>
-          <Text style={styles.heading}>Login to Your Account</Text>
-          <Text style={styles.paragraph}>Sign in to explore a world of culinary possibilities with Fridge Chef.</Text>
-        </View>
+    <LinearGradient colors={['#fff', '#8796a2']} style={styles.container}>
+      <View style={styles.contentContainer}>
+        <Text style={styles.heading}>Login to Your Account</Text>
+        <Text style={styles.paragraph}>Sign in to explore a world of culinary possibilities with Fridge Chef.</Text>
+      </View>
 
-        <View style={styles.inputContainer}>
-          <Ionicons name="mail" size={24} color={colors.secondary} style={styles.icon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#000"
-            value={email}
-            onChangeText={setEmail}
-          />
-        </View>
-        {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
+      <View style={styles.inputContainer}>
+        <Ionicons name="mail" size={24} color={colors.secondary} style={styles.icon} />
+        <TextInput
+          style={[styles.input, { outlineStyle: 'none' }]}
+          placeholder="Email"
+          placeholderTextColor="#000"
+          value={email}
+          onChangeText={setEmail}
+        />
+      </View>
+      {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
 
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed" size={24} color={colors.secondary} style={styles.icon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#000"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-        </View>
-        {passwordError ? <Text style={styles.error}>{passwordError}</Text> : null}
+      <View style={styles.inputContainer}>
+        <Ionicons name="lock-closed" size={24} color={colors.secondary} style={styles.icon} />
+        <TextInput
+          style={[styles.input, { outlineStyle: 'none' }]}
+          placeholder="Password"
+          placeholderTextColor="#000"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+      </View>
+      {passwordError ? <Text style={styles.error}>{passwordError}</Text> : null}
 
-        <TouchableOpacity style={styles.forgotPasswordButton}>
-          <Text style={styles.forgotPasswordButtonText}>Forgot Password</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.forgotPasswordButton}>
+        <Text style={styles.forgotPasswordButtonText}>Forgot Password</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Login</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.signupButton} onPress={() => navigation.navigate('SignUp')}>
-          <Text style={styles.signupButtonText}>Don't have an account? Sign Up</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.signupButton} onPress={() => navigation.navigate('SignUp')}>
+        <Text style={styles.signupButtonText}>Don't have an account? Sign Up</Text>
+      </TouchableOpacity>
 
-        <View style={styles.termsContainer}>
-          <Text style={styles.termsText}>By logging in, you agree to our Terms of Service and Privacy Policy.</Text>
-        </View>
-      </LinearGradient>
-    </TouchableWithoutFeedback>
+      <View style={styles.termsContainer}>
+        <Text style={styles.termsText}>By logging in, you agree to our Terms of Service and Privacy Policy.</Text>
+      </View>
+    </LinearGradient>
   );
 };
 

@@ -1,10 +1,9 @@
 import axios from 'axios';
-import recipesData from '../shared/recipes.json';
 
 // Simulating API delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-const API_BASE_URL = 'https://api.flofer.com/api/appfridgecheck';
+const API_BASE_URL = 'http://localhost:3000';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -12,6 +11,11 @@ const api = axios.create({
         'Content-Type': 'application/json',
     },
 });
+
+// Add this function to set the token after login
+export const setAuthToken = (token) => {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+};
 
 const categories = [
     { id: '1', name: 'Breakfast', key: 'breakfast' },
@@ -40,68 +44,72 @@ const assignCategory = (recipe) => {
 };
 
 export const login = async (email, password) => {
-    await delay(1000); // Simulate network delay
-    // For demo purposes, always return a successful login
-    return {
-        id: '123',
-        name: 'John Doe',
-        email: email,
-        token: 'dummy_token_12345'
-    };
+    try {
+        const response = await api.post('/auth/login', { email, password });
+        setAuthToken(response.data.token);
+        return response.data;
+    } catch (error) {
+        throw error.response.data;
+    }
 };
 
 export const signup = async (fullName, email, password) => {
-    await delay(1000); // Simulate network delay
-    // For demo purposes, always return a successful signup
-    return {
-        id: '124',
-        name: fullName,
-        email: email,
-        token: 'dummy_token_67890'
-    };
+    try {
+        const response = await api.post('/auth/signup', { fullName, email, password });
+        setAuthToken(response.data.token);
+        return response.data;
+    } catch (error) {
+        throw error.response.data;
+    }
 };
 
-export const getRecipes = async () => {
-    await delay(1000); // Simulate network delay
-    // Combine all recipes and assign categories
-    const allRecipes = [...recipesData.myRecipes, ...recipesData.popularRecipes];
-    return allRecipes.map(recipe => ({
-        ...recipe,
-        category: assignCategory(recipe)
-    }));
+export const getRecipes = async (page = 1, limit = 10) => {
+    try {
+        const response = await api.get(`/recipes?page=${page}&limit=${limit}`);
+        return response.data;
+    } catch (error) {
+        throw error.response.data;
+    }
 };
 
 export const getRecipesByIngredients = async (ingredients) => {
-    await delay(1000); // Simulate network delay
-    // For demo purposes, just return some random recipes
-    return recipesData.myRecipes.slice(0, 3);
+    try {
+        const response = await api.post('/recipes/by-ingredients', { ingredients });
+        return response.data.recipes;
+    } catch (error) {
+        throw error.response.data;
+    }
 };
 
 export const getUserProfile = async (userId) => {
-    await delay(1000); // Simulate network delay
-    // Return a dummy user profile
-    return {
-        id: userId,
-        name: 'John Doe',
-        username: 'johndoe',
-        profilePicture: 'https://example.com/profile-picture.jpg',
-        bio: 'Food enthusiast | Amateur chef | Recipe creator',
-        recipesCount: recipesData.myRecipes.length,
-        followersCount: 1200,
-        followingCount: 350,
-        recipes: recipesData.myRecipes,
-        recentActivity: [
-            { icon: 'star', text: 'Liked Spaghetti Carbonara recipe' },
-            { icon: 'pencil', text: 'Created Homemade Pizza recipe' }
-        ]
-    };
+    try {
+        const response = await api.get(`/users/${userId}`);
+        return response.data;
+    } catch (error) {
+        throw error.response.data;
+    }
 };
 
 export const updateUserProfile = async (userId, profileData) => {
-    await delay(1000); // Simulate network delay
-    // For demo purposes, just return the updated profile data
-    return {
-        ...profileData,
-        id: userId
-    };
+    try {
+        const response = await api.put(`/users/${userId}`, profileData);
+        return response.data;
+    } catch (error) {
+        throw error.response.data;
+    }
+};
+
+export const uploadFridgeImage = async (imageFile) => {
+    try {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        const response = await api.post('/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response.data;
+    }
 };

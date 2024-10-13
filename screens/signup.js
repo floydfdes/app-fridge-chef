@@ -1,7 +1,17 @@
-import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import {
+  Alert,
+  Keyboard,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
+} from 'react-native';
 import React, { useState } from 'react';
 import { colors, useAppFonts } from '../shared/fonts';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { signup } from '../services/api';
@@ -21,6 +31,7 @@ const Signup = ({ navigation }) => {
   }
 
   const handleSignup = async () => {
+    Keyboard.dismiss();
     // Reset previous error messages
     setFullNameError('');
     setEmailError('');
@@ -61,22 +72,17 @@ const Signup = ({ navigation }) => {
 
     try {
       const userData = await signup(fullName, email, password);
-      // For now, just log the user data and navigate to Home
+      await AsyncStorage.setItem('userId', userData.userId);
       console.log('User signed up:', userData);
       navigation.navigate('Home');
     } catch (error) {
-      console.error('Signup error:', error);
-      // Display a generic error message
-      Alert.alert('Signup Failed', 'Please try again later.');
+      console.error('Signup failed:', error);
+      Alert.alert('Signup Failed', error.message || 'Please try again');
     }
   };
 
-  const dismissKeyboard = () => {
-    Keyboard.dismiss();
-  };
-
   return (
-    <TouchableWithoutFeedback onPress={dismissKeyboard}>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <LinearGradient colors={['#fff', '#8796a2']} style={styles.container}>
         <View style={styles.contentContainer}>
           <Text style={styles.heading}>Create an Account</Text>
@@ -86,7 +92,7 @@ const Signup = ({ navigation }) => {
         <View style={styles.inputContainer}>
           <Ionicons name="person" size={24} color={colors.secondary} style={styles.icon} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { outlineStyle: 'none' }]}
             placeholder="Full Name"
             placeholderTextColor="#000"
             value={fullName}
@@ -98,7 +104,7 @@ const Signup = ({ navigation }) => {
         <View style={styles.inputContainer}>
           <Ionicons name="mail" size={24} color={colors.secondary} style={styles.icon} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { outlineStyle: 'none' }]}
             placeholder="Email"
             placeholderTextColor="#000"
             value={email}
@@ -110,7 +116,7 @@ const Signup = ({ navigation }) => {
         <View style={styles.inputContainer}>
           <Ionicons name="lock-closed" size={24} color={colors.secondary} style={styles.icon} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { outlineStyle: 'none' }]}
             placeholder="Password"
             placeholderTextColor="#000"
             secureTextEntry
