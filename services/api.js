@@ -27,20 +27,27 @@ const categories = [
 ];
 
 const assignCategory = (recipe) => {
+    const categories = {
+        breakfast: ['breakfast', 'pancake', 'omelette'],
+        lunch: ['salad', 'sandwich'],
+        dinner: ['soup', 'steak', 'pasta'],
+        desserts: ['cake', 'pie', 'ice cream'],
+        vegetarian: ['vegetable', 'vegan']
+    };
+
     const name = recipe.name.toLowerCase();
-    if (name.includes('breakfast') || name.includes('pancake') || name.includes('omelette')) {
-        return 'breakfast';
-    } else if (name.includes('salad') || name.includes('sandwich')) {
-        return 'lunch';
-    } else if (name.includes('soup') || name.includes('steak') || name.includes('pasta')) {
-        return 'dinner';
-    } else if (name.includes('cake') || name.includes('pie') || name.includes('ice cream')) {
-        return 'desserts';
-    } else if (name.includes('vegetable') || name.includes('vegan') || !name.includes('chicken') && !name.includes('beef') && !name.includes('pork') && !name.includes('fish')) {
-        return 'vegetarian';
-    } else {
-        return 'quickAndEasy';
+
+    for (const [category, keywords] of Object.entries(categories)) {
+        if (keywords.some(keyword => name.includes(keyword))) {
+            return category;
+        }
     }
+
+    if (!['chicken', 'beef', 'pork', 'fish'].some(meat => name.includes(meat))) {
+        return 'vegetarian';
+    }
+
+    return 'quickAndEasy';
 };
 
 export const login = async (email, password) => {
