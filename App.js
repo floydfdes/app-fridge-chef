@@ -1,23 +1,21 @@
-import { FontAwesome, FontAwesome5 } from '@expo/vector-icons'; // Import icons from Expo Icons
-import { baseFontSize, colors } from './shared/fonts';
-
-import Explorer from './screens/explorer'; // Add this import
-import Landing from './screens/landing';
-import Login from './screens/login';
-import Main from './screens/main';
-import MyRecipes from './screens/myrecipes';
-import { NavigationContainer } from '@react-navigation/native';
-import Profile from './screens/profile';
 import React from 'react';
-import Signup from './screens/signup';
 import { StatusBar } from 'expo-status-bar';
+import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+
+import Landing from './screens/landing';
+import Login from './screens/login';
+import Signup from './screens/signup';
+import Main from './screens/main';
+import Explorer from './screens/explorer';
+import MyRecipes from './screens/myrecipes';
+import Profile from './screens/profile';
+
+import { baseFontSize, colors } from './shared/fonts';
 
 const Stack = createStackNavigator();
-
-
-
 const Tab = createBottomTabNavigator();
 
 function HomeNavigator() {
@@ -33,7 +31,6 @@ function HomeNavigator() {
         tabBarLabelStyle: {
           fontFamily: 'Poppins',
           marginBottom: 1
-
         },
       }}
     >
@@ -77,7 +74,6 @@ function HomeNavigator() {
   );
 }
 
-
 const App = () => {
   return (
     <NavigationContainer>
@@ -107,7 +103,5 @@ const App = () => {
     </NavigationContainer>
   );
 };
-
-
 
 export default App;
