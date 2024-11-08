@@ -1,3 +1,4 @@
+import React, { useState, useCallback } from 'react';
 import {
   Alert,
   Keyboard,
@@ -6,80 +7,62 @@ import {
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View
+  View,
+  ActivityIndicator,
 } from 'react-native';
-import React, { useState } from 'react';
 import { colors, useAppFonts } from '../shared/fonts';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { signup } from '../services/api';
 
 const Signup = ({ navigation }) => {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullNameError, setFullNameError] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [formData, setFormData] = useState({ fullName: '', email: '', password: '' });
+  const [formErrors, setFormErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const { fullName, email, password } = formData;
+  const { fullNameError, emailError, passwordError } = formErrors;
 
   const loaded = useAppFonts();
+  if (!loaded) return null;
 
-  if (!loaded) {
-    return null; // or a loading indicator
-  }
+  const handleInputChange = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-  const handleSignup = async () => {
+  const validateForm = useCallback(() => {
+    const errors = {};
+    if (!fullName) errors.fullNameError = 'Please enter your full name';
+    if (!email) errors.emailError = 'Please enter your email';
+    else if (!/^\S+@\S+\.\S+$/.test(email)) errors.emailError = 'Please enter a valid email';
+    if (!password) errors.passwordError = 'Please enter your password';
+    else if (password.length < 6) errors.passwordError = 'Password should be at least 6 characters';
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [fullName, email, password]);
+
+  const handleSignup = useCallback(async () => {
     Keyboard.dismiss();
-    // Reset previous error messages
-    setFullNameError('');
-    setEmailError('');
-    setPasswordError('');
+    setLoading(true);
 
-    let hasError = false;
-
-    // Full Name validation
-    if (!fullName) {
-      setFullNameError('Please enter your full name');
-      hasError = true;
-    }
-
-    // Email validation
-    if (!email) {
-      setEmailError('Please enter your email');
-      hasError = true;
-    } else {
-      const emailRegex = /^\S+@\S+\.\S+$/;
-      if (!emailRegex.test(email)) {
-        setEmailError('Please enter a valid email');
-        hasError = true;
-      }
-    }
-
-    // Password validation
-    if (!password) {
-      setPasswordError('Please enter your password');
-      hasError = true;
-    } else if (password.length < 6) {
-      setPasswordError('Password should be at least 6 characters long');
-      hasError = true;
-    }
-
-    if (hasError) {
+    if (!validateForm()) {
+      setLoading(false);
       return;
     }
 
     try {
       const userData = await signup(fullName, email, password);
       await AsyncStorage.setItem('userId', userData.userId);
-      console.log('User signed up:', userData);
       navigation.navigate('Home');
     } catch (error) {
       console.error('Signup failed:', error);
-      Alert.alert('Signup Failed', error.message || 'Please try again');
+      Alert.alert('Signup Failed', 'Please try again');
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [fullName, email, password, navigation, validateForm]);
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -89,45 +72,33 @@ const Signup = ({ navigation }) => {
           <Text style={styles.paragraph}>Sign up to explore a world of culinary possibilities with Fridge Chef.</Text>
         </View>
 
-        <View style={styles.inputContainer}>
-          <Ionicons name="person" size={24} color={colors.secondary} style={styles.icon} />
-          <TextInput
-            style={[styles.input, { outlineStyle: 'none' }]}
-            placeholder="Full Name"
-            placeholderTextColor="#000"
-            value={fullName}
-            onChangeText={setFullName}
-          />
-        </View>
-        {fullNameError ? <Text style={styles.error}>{fullNameError}</Text> : null}
+        <InputField
+          icon="person"
+          placeholder="Full Name"
+          value={fullName}
+          onChangeText={(value) => handleInputChange('fullName', value)}
+          error={fullNameError}
+        />
 
-        <View style={styles.inputContainer}>
-          <Ionicons name="mail" size={24} color={colors.secondary} style={styles.icon} />
-          <TextInput
-            style={[styles.input, { outlineStyle: 'none' }]}
-            placeholder="Email"
-            placeholderTextColor="#000"
-            value={email}
-            onChangeText={setEmail}
-          />
-        </View>
-        {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
+        <InputField
+          icon="mail"
+          placeholder="Email"
+          value={email}
+          onChangeText={(value) => handleInputChange('email', value)}
+          error={emailError}
+        />
 
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed" size={24} color={colors.secondary} style={styles.icon} />
-          <TextInput
-            style={[styles.input, { outlineStyle: 'none' }]}
-            placeholder="Password"
-            placeholderTextColor="#000"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-        </View>
-        {passwordError ? <Text style={styles.error}>{passwordError}</Text> : null}
+        <InputField
+          icon="lock-closed"
+          placeholder="Password"
+          value={password}
+          onChangeText={(value) => handleInputChange('password', value)}
+          error={passwordError}
+          secureTextEntry
+        />
 
-        <TouchableOpacity style={styles.button} onPress={handleSignup}>
-          <Text style={styles.buttonText}>Sign Up</Text>
+        <TouchableOpacity style={styles.button} onPress={handleSignup} disabled={loading}>
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign Up</Text>}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('Login')}>
@@ -141,6 +112,23 @@ const Signup = ({ navigation }) => {
     </TouchableWithoutFeedback>
   );
 };
+
+const InputField = ({ icon, placeholder, value, onChangeText, error, secureTextEntry }) => (
+  <>
+    <View style={styles.inputContainer}>
+      <Ionicons name={icon} size={24} color={colors.secondary} style={styles.icon} />
+      <TextInput
+        style={[styles.input, { outlineStyle: 'none' }]}
+        placeholder={placeholder}
+        placeholderTextColor="#000"
+        value={value}
+        onChangeText={onChangeText}
+        secureTextEntry={secureTextEntry}
+      />
+    </View>
+    {error ? <Text style={styles.error}>{error}</Text> : null}
+  </>
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -157,7 +145,6 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 38,
     fontWeight: 'bold',
-    textAlign: 'left',
     letterSpacing: 3,
     marginBottom: 10,
     color: colors.primary,
@@ -165,7 +152,6 @@ const styles = StyleSheet.create({
   },
   paragraph: {
     fontSize: 16,
-    textAlign: 'left',
     lineHeight: 30,
     color: colors.primary,
     fontFamily: 'PoppinsLight',
@@ -180,24 +166,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    fontFamily: 'Poppins',
   },
-  icon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    height: '100%',
-    color: '#000',
-    fontFamily: 'PoppinsLight',
-  },
+  icon: { marginRight: 10 },
+  input: { flex: 1, height: '100%', color: '#000', fontFamily: 'PoppinsLight' },
   button: {
     backgroundColor: colors.secondary,
     borderRadius: 35,
@@ -207,21 +182,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 10,
   },
-  buttonText: {
-    color: '#000',
-    fontSize: 18,
-    textAlign: 'center',
-    fontWeight: 'bold',
-    fontFamily: 'Poppins',
-  },
+  buttonText: { color: '#000', fontSize: 18, fontWeight: 'bold', fontFamily: 'Poppins' },
   loginButton: {
     backgroundColor: '#fff',
     borderRadius: 35,
@@ -231,37 +197,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 10,
   },
-  loginButtonText: {
-    color: colors.secondary,
-    fontSize: 18,
-    fontWeight: 'bold',
-    fontFamily: 'Poppins',
-  },
-  termsContainer: {
-    flex: 1,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  termsText: {
-    fontSize: 12,
-    color: '#000',
-    textAlign: 'center',
-    fontFamily: 'PoppinsLight',
-  },
-  error: {
-    color: 'red',
-    marginBottom: 5,
-    marginTop: -19,
-  },
+  loginButtonText: { color: colors.secondary, fontSize: 18, fontWeight: 'bold', fontFamily: 'Poppins' },
+  termsContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  termsText: { fontSize: 12, color: '#000', textAlign: 'center', fontFamily: 'PoppinsLight' },
+  error: { color: 'red', marginBottom: 5, marginTop: -19 },
 });
 
 export default Signup;
